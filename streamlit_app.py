@@ -295,6 +295,7 @@ def parse_single_file(uploaded_file):
         "title": "-",
         "operator": "-",
         "product": "Battery Thermal Management",
+        "site": "VSTS / Power Chonburi",
         "note_1": "-"
     }
 
@@ -319,6 +320,8 @@ def parse_single_file(uploaded_file):
                     metadata["operator"] = val
                 elif key.lower() == "product":
                     metadata["product"] = val if (val and val != "-") else "Battery Thermal Management"
+                elif key.lower() == "site":
+                    metadata["site"] = val if (val and val != "-") else "VSTS / Power Chonburi"
                 elif "note" in key.lower():
                     metadata["note_1"] = val
                 elif key.isdigit():
@@ -509,6 +512,7 @@ if uploaded_file:
                 <div class="raw-header-box">
                     <div><span class="raw-header-key">#operator</span> = <span class="raw-header-val">{metadata.get('operator', '-')}</span></div>
                     <div><span class="raw-header-key">#product</span> = <span class="raw-header-val">{metadata.get('product', 'Battery Thermal Management')}</span></div>
+                    <div><span class="raw-header-key">#site</span> = <span class="raw-header-val">{metadata.get('site', 'VSTS / Power Chonburi')}</span></div>
                 </div>
             """, unsafe_allow_html=True)
 
