@@ -455,11 +455,8 @@ if uploaded_file:
             ]
             angle_setting = 0
 
-        # ตัดข้อมูลกราฟหลังช่วง Exit ออกเพื่อความสวยงาม
-        exit_end_seconds = time_str_to_seconds(zones_data[-1]["End Time"])
-        df_chart = df[df["ElapsedSeconds"] <= exit_end_seconds].copy()
-        if df_chart.empty:
-            df_chart = df.copy()
+        # 📌 ปลดล็อกให้แสดงกราฟข้อมูลทั้งหมดในไฟล์ (ไม่ตัดจบกราฟตามโซนที่ตั้งไว้ เพื่อแก้ปัญหากราฟขาด)
+        df_chart = df.copy()
 
         # 📋 แสดงผล Header Metadata
         col_h1, col_h2 = st.columns(2)
@@ -540,10 +537,12 @@ if uploaded_file:
                 textangle=angle_setting
             )
 
-        # คำนวณช่วง Tick สำหรับแกน Time ให้เหมาะสม
+        # คำนวณช่วง Tick สำหรับแกน Time ให้เหมาะสม และป้องกันการซ้อนทับที่ปลายกราฟ
         step_tick = max(1, len(df_chart) // 16)
         tick_indices = list(range(0, len(df_chart), step_tick))
-        if (len(df_chart) - 1) not in tick_indices and len(df_chart) > 0:
+        if len(tick_indices) > 0 and (len(df_chart) - 1) - tick_indices[-1] < (step_tick * 0.5):
+            tick_indices[-1] = len(df_chart) - 1
+        elif len(df_chart) > 0:
             tick_indices.append(len(df_chart) - 1)
             
         # สร้างรายการ Tick สำหรับแกน Distance โดยเฉพาะ
@@ -638,7 +637,7 @@ if uploaded_file:
         # ---------------------------------------------------------
         st.markdown("### 📊 ตารางสรุปผลการวิเคราะห์ (Data Table for Google Sheets Copy)")
 
-        # ครอบคลุมโซน Dryer จนสิ้นสุดช่วง Xfer#1 ก่อนเข้า Z#1 (335 วินาที)
+        # 📌 ครอบคลุมความร้อนช่วง Dryer ลากยาวจนสุด Xfer#1 ก่อนเข้า Z#1
         dryer_max_sec = 335
         
         dryer_subset = df[(df["ElapsedSeconds"] >= 0) & (df["ElapsedSeconds"] <= dryer_max_sec)]
@@ -653,7 +652,6 @@ if uploaded_file:
                     ordered_cols.append((p_num, c))
                     break
 
-        # ดึงข้อความ #title มาตรวจสอบรูปแบบตำแหน่ง Probe
         title_meta = metadata.get("title", "")
 
         # คำนวณค่า Dwell Time 300°C ของทุก Probe สำหรับนำไปหา Pitch (Max, Min, AVG)
@@ -672,7 +670,7 @@ if uploaded_file:
 
         summary_rows = []
         for idx, (p_num, col_name) in enumerate(ordered_cols):
-            # 📌 เรียกใช้ฟังก์ชันตรวจสอบตำแหน่ง Probe ตาม #title
+            # ตรวจสอบตำแหน่ง Probe อัตโนมัติจาก #title
             location = get_probe_location(p_num, title_meta)
 
             short_pb_name = f"PB#{p_num}"
