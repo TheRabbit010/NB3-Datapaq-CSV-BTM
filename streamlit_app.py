@@ -458,8 +458,11 @@ if uploaded_file:
             ]
             angle_setting = 0
 
-        # แสดงกราฟข้อมูลทั้งหมดในไฟล์ โดยไม่ตัดจบ (ให้กราฟลากยาวไปจนสุดไฟล์)
-        df_chart = df.copy()
+        # 📌 ตัดข้อมูลกราฟให้แสดงแค่ 00:00:00 ถึง 00:28:35 (1,715 วินาที) ตามข้อกำหนด
+        max_view_sec = 1715
+        df_chart = df[df["ElapsedSeconds"] <= max_view_sec].copy()
+        if df_chart.empty:
+            df_chart = df.copy()
 
         # 📋 แสดงผล Header Metadata
         col_h1, col_h2 = st.columns(2)
@@ -640,12 +643,12 @@ if uploaded_file:
         # ---------------------------------------------------------
         st.markdown("### 📊 ตารางสรุปผลการวิเคราะห์ (Data Table for Google Sheets Copy)")
 
-        # ครอบคลุมโซน Dryer จนสิ้นสุดช่วง Xfer#1 ก่อนเข้า Z#1 (00:07:11 หรือ 431 วินาที)
-        dryer_max_sec = 431
+        # ครอบคลุมโซน Dryer (00:05:00 หรือ 300 วินาที)
+        dryer_max_sec = 300
         
         dryer_subset = df[(df["ElapsedSeconds"] >= 0) & (df["ElapsedSeconds"] <= dryer_max_sec)]
         brazing_ht_subset = df[(df["ElapsedSeconds"] >= 0)]
-        brazing_max_subset = df[(df["ElapsedSeconds"] >= 432) & (df["ElapsedSeconds"] <= 1205)]
+        brazing_max_subset = df[(df["ElapsedSeconds"] >= 300) & (df["ElapsedSeconds"] <= 1205)]
 
         probe_order = [1, 2, 3, 4, 5, 6, 7, 8]
         ordered_cols = []
@@ -666,6 +669,7 @@ if uploaded_file:
             
             # Max Temp
             br_max = f"{brazing_max_subset[col_name].max():.1f}" if not brazing_max_subset.empty else "0.0"
+            d_max = f"{dryer_subset[col_name].max():.1f}" if not dryer_subset.empty else "0.0"
             
             # Dwell Time
             br_dwell_600 = (brazing_ht_subset[col_name] >= 600.0).sum() if not brazing_ht_subset.empty else 0
@@ -673,28 +677,27 @@ if uploaded_file:
             br_dwell_577 = (brazing_ht_subset[col_name] >= 577.0).sum() if not brazing_ht_subset.empty else 0
             
             d_dwell_300 = (dryer_subset[col_name] >= 300.0).sum() if not dryer_subset.empty else 0
-            d_dwell_250 = (dryer_subset[col_name] >= 250.0).sum() if not dryer_subset.empty else 0
 
             summary_rows.append([
                 location,
                 short_pb_name,
                 br_max,
+                d_max,
                 format_seconds_to_time(br_dwell_600),
                 format_seconds_to_time(br_dwell_591),
                 format_seconds_to_time(br_dwell_577),
-                format_seconds_to_time(d_dwell_300),
-                format_seconds_to_time(d_dwell_250)
+                format_seconds_to_time(d_dwell_300)
             ])
 
         multi_cols = pd.MultiIndex.from_tuples([
             ("", "Location"),
             ("", "Probe"),
-            ("Brazing Zone", "Max Temp (°C)"),
+            ("Max Temp (°C)", "Brazing"),
+            ("Max Temp (°C)", "Dryer"),
             ("Brazing Zone", "Dwell Time Above 600°C"),
             ("Brazing Zone", "Dwell Time Above 591°C"),
             ("Brazing Zone", "Dwell Time Above 577°C"),
-            ("Dryer Zone", "Dwell Time Above 300°C"),
-            ("Dryer Zone", "Dwell Time Above 250°C")
+            ("Dryer Zone", "Dwell Time Above 300°C")
         ])
 
         display_summary_df = pd.DataFrame(summary_rows, columns=multi_cols)
@@ -706,7 +709,7 @@ if uploaded_file:
             <div style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px 18px; font-size: 13px; color: #CCCCCC; margin-top: 10px;">
                 <b style="color: #F0B90B;">📌 เกณฑ์มาตรฐานอ้างอิง (Process Standards):</b><br>
                 • <b>Brazing Zone:</b> Max Temperature: <b>595 - 608 °C</b> | Dwell Time Above 600°C: <b>≤ 08:00 min (≤480s)</b> | Above 591°C: <b>02:00 - 12:00 min (120s - 720s)</b> | Above 577°C: <b>04:00 - 14:00 min (240s - 840s)</b><br>
-                • <b>Dryer Zone:</b> Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b> | Dwell Time Above 250°C: <b>> 2:00 min (>120s)</b>
+                • <b>Dryer Zone:</b> Max Temperature: <b>200 - 375 °C</b> | Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b>
             </div>
         """, unsafe_allow_html=True)
 
