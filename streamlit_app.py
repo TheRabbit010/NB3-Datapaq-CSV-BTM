@@ -213,6 +213,30 @@ def hex_to_rgba(hex_str, opacity=0.25):
     b = int(hex_str[4:6], 16)
     return f"rgba({r}, {g}, {b}, {opacity})"
 
+# 📌 ฟังก์ชันปรับช่วงเวลาโซนสีให้แมตช์กับแกนเวลากราฟโดยไม่หลุดขอบ
+def safe_zones_for_plotly(zones_data, df_chart):
+    if df_chart.empty:
+        return zones_data
+    
+    max_sec = df_chart["ElapsedSeconds"].iloc[-1]
+    max_time_str = df_chart["Time (HH:MM:SS)"].iloc[-1]
+    
+    safe_zones = []
+    for z in zones_data:
+        z_start = time_str_to_seconds(z["Start Time"])
+        z_end = time_str_to_seconds(z["End Time"])
+        
+        if z_start > max_sec:
+            continue
+            
+        z_copy = dict(z)
+        if z_end > max_sec:
+            z_copy["End Time"] = max_time_str
+            
+        safe_zones.append(z_copy)
+        
+    return safe_zones
+
 # 📌 ฟังก์ชันกำหนดตำแหน่ง Probe ตาม #title
 def get_probe_location(p_num, title_meta):
     title_upper = str(title_meta).upper() if title_meta else ""
@@ -430,36 +454,38 @@ if uploaded_file:
 
         if color_shading_mode == "แสดงสีตามโซน (By Zone)":
             zones_data = [
-                {"Start Time": "00:00:00", "End Time": "00:01:47", "Zone Name": "Dryer Z#1", "Color": "#F7DC6F"},
-                {"Start Time": "00:01:48", "End Time": "00:03:34", "Zone Name": "Dryer Z#2", "Color": "#F39C12"},
-                {"Start Time": "00:03:35", "End Time": "00:05:35", "Zone Name": "Xfer#1", "Color": "#E67E22"},
-                {"Start Time": "00:05:36", "End Time": "00:07:53", "Zone Name": "Z#1", "Color": "#FF0033"},       
-                {"Start Time": "00:07:54", "End Time": "00:09:37", "Zone Name": "Z#2", "Color": "#E6002E"},       
-                {"Start Time": "00:09:38", "End Time": "00:11:09", "Zone Name": "Z#3", "Color": "#CC0029"},       
-                {"Start Time": "00:11:10", "End Time": "00:12:30", "Zone Name": "Z#4", "Color": "#B30024"},       
-                {"Start Time": "00:12:31", "End Time": "00:13:59", "Zone Name": "Z#5", "Color": "#CC0029"},       
-                {"Start Time": "00:14:00", "End Time": "00:15:12", "Zone Name": "Z#6", "Color": "#E6002E"},       
-                {"Start Time": "00:15:13", "End Time": "00:16:36", "Zone Name": "Z#7", "Color": "#FF0033"},       
-                {"Start Time": "00:16:37", "End Time": "00:17:07", "Zone Name": "Xfer2", "Color": "#00B4D8"},
-                {"Start Time": "00:17:08", "End Time": "00:18:14", "Zone Name": "WatCol1", "Color": "#0096C7"},
-                {"Start Time": "00:18:15", "End Time": "00:19:26", "Zone Name": "WatCol2", "Color": "#00B4D8"},
-                {"Start Time": "00:19:27", "End Time": "00:20:54", "Zone Name": "Exit curtain box", "Color": "#0077B6"},
-                {"Start Time": "00:20:55", "End Time": "00:21:42", "Zone Name": "Airc1", "Color": "#48CAE4"},
-                {"Start Time": "00:21:43", "End Time": "00:22:30", "Zone Name": "Airc2", "Color": "#90E0EF"},
-                {"Start Time": "00:22:31", "End Time": "00:22:45", "Zone Name": "Exit", "Color": "#CAF0F8"}
+                {"Start Time": "00:00:00", "End Time": "00:00:04", "Zone Name": "XFER", "Color": "#F7DC6F"},
+                {"Start Time": "00:00:05", "End Time": "00:01:31", "Zone Name": "Dryer Z#1", "Color": "#F7DC6F"},
+                {"Start Time": "00:01:32", "End Time": "00:02:59", "Zone Name": "Dryer Z#2", "Color": "#F39C12"},
+                {"Start Time": "00:03:00", "End Time": "00:04:31", "Zone Name": "Dryer Z#3", "Color": "#F39C12"},
+                {"Start Time": "00:04:32", "End Time": "00:07:11", "Zone Name": "XFER#1", "Color": "#E67E22"},
+                {"Start Time": "00:07:12", "End Time": "00:10:01", "Zone Name": "Z#1", "Color": "#FF0033"},       
+                {"Start Time": "00:10:02", "End Time": "00:12:11", "Zone Name": "Z#2", "Color": "#E6002E"},       
+                {"Start Time": "00:12:12", "End Time": "00:13:59", "Zone Name": "Z#3", "Color": "#CC0029"},       
+                {"Start Time": "00:14:00", "End Time": "00:15:39", "Zone Name": "Z#4", "Color": "#B30024"},       
+                {"Start Time": "00:15:40", "End Time": "00:17:18", "Zone Name": "Z#5", "Color": "#CC0029"},       
+                {"Start Time": "00:17:19", "End Time": "00:18:48", "Zone Name": "Z#6", "Color": "#E6002E"},       
+                {"Start Time": "00:18:49", "End Time": "00:20:05", "Zone Name": "Z#7", "Color": "#FF0033"},       
+                {"Start Time": "00:20:06", "End Time": "00:22:06", "Zone Name": "WatCool#1", "Color": "#00B4D8"},
+                {"Start Time": "00:22:07", "End Time": "00:23:35", "Zone Name": "WatCool#2", "Color": "#0096C7"},
+                {"Start Time": "00:23:36", "End Time": "00:25:05", "Zone Name": "Exit curtain box", "Color": "#0077B6"},
+                {"Start Time": "00:25:06", "End Time": "00:25:33", "Zone Name": "XFER#2", "Color": "#023E8A"},
+                {"Start Time": "00:25:34", "End Time": "00:26:33", "Zone Name": "AirCool#1", "Color": "#48CAE4"},
+                {"Start Time": "00:26:34", "End Time": "00:27:32", "Zone Name": "AirCool#2", "Color": "#90E0EF"},
+                {"Start Time": "00:27:33", "End Time": "00:28:59", "Zone Name": "Exit", "Color": "#CAF0F8"}
             ]
             angle_setting = -90
         else:
             zones_data = [
-                {"Start Time": "00:00:00", "End Time": "00:04:00", "Zone Name": "Dryer", "Color": "#F39C12"},      
-                {"Start Time": "00:05:01", "End Time": "00:17:07", "Zone Name": "Brazing", "Color": "#FF0033"},    
-                {"Start Time": "00:17:08", "End Time": "00:22:30", "Zone Name": "Cool", "Color": "#00B4D8"},       
-                {"Start Time": "00:22:31", "End Time": "00:25:00", "Zone Name": "Exit", "Color": "#90E0EF"}
+                {"Start Time": "00:00:00", "End Time": "00:05:00", "Zone Name": "Dryer", "Color": "#F39C12"},      
+                {"Start Time": "00:05:01", "End Time": "00:20:05", "Zone Name": "Brazing", "Color": "#FF0033"},    
+                {"Start Time": "00:20:06", "End Time": "00:27:32", "Zone Name": "Cool", "Color": "#00B4D8"},       
+                {"Start Time": "00:27:33", "End Time": "00:28:00", "Zone Name": "Exit", "Color": "#90E0EF"}
             ]
             angle_setting = 0
 
-        # 📌 ตัดข้อมูลกราฟให้แสดงแค่ 00:00:00 ถึง 00:28:35 (1,715 วินาที) ตามข้อกำหนด
-        max_view_sec = 1715
+        # 📌 ตัดข้อมูลกราฟให้แสดงแค่วินาทีที่ 1739 (00:28:59) เพื่อให้ครอบคลุมโซนทั้งหมดพอดี
+        max_view_sec = 1739
         df_chart = df[df["ElapsedSeconds"] <= max_view_sec].copy()
         if df_chart.empty:
             df_chart = df.copy()
@@ -512,8 +538,11 @@ if uploaded_file:
             )
         )
 
+        # 📌 เรียกใช้ฟังก์ชัน safe_zones_for_plotly เพื่อปรับพิกัดโซนสีไม่ให้หลุดขอบกราฟ
+        render_zones = safe_zones_for_plotly(zones_data, df_chart)
+
         # แสดงแถบสีพื้นหลังตามโหมดที่ผู้ใช้เลือกใน Sidebar
-        for idx, z_item in enumerate(zones_data):
+        for idx, z_item in enumerate(render_zones):
             start_t = z_item["Start Time"]
             end_t = z_item["End Time"]
             z_name = z_item["Zone Name"]
