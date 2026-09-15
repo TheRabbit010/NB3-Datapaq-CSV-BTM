@@ -454,38 +454,36 @@ if uploaded_file:
 
         if color_shading_mode == "แสดงสีตามโซน (By Zone)":
             zones_data = [
-                {"Start Time": "00:00:00", "End Time": "00:00:04", "Zone Name": "XFER", "Color": "#F7DC6F"},
-                {"Start Time": "00:00:05", "End Time": "00:01:31", "Zone Name": "Dryer Z#1", "Color": "#F7DC6F"},
-                {"Start Time": "00:01:32", "End Time": "00:02:59", "Zone Name": "Dryer Z#2", "Color": "#F39C12"},
-                {"Start Time": "00:03:00", "End Time": "00:04:31", "Zone Name": "Dryer Z#3", "Color": "#F39C12"},
-                {"Start Time": "00:04:32", "End Time": "00:07:11", "Zone Name": "XFER#1", "Color": "#E67E22"},
-                {"Start Time": "00:07:12", "End Time": "00:10:01", "Zone Name": "Z#1", "Color": "#FF0033"},       
-                {"Start Time": "00:10:02", "End Time": "00:12:11", "Zone Name": "Z#2", "Color": "#E6002E"},       
-                {"Start Time": "00:12:12", "End Time": "00:13:59", "Zone Name": "Z#3", "Color": "#CC0029"},       
-                {"Start Time": "00:14:00", "End Time": "00:15:39", "Zone Name": "Z#4", "Color": "#B30024"},       
-                {"Start Time": "00:15:40", "End Time": "00:17:18", "Zone Name": "Z#5", "Color": "#CC0029"},       
-                {"Start Time": "00:17:19", "End Time": "00:18:48", "Zone Name": "Z#6", "Color": "#E6002E"},       
-                {"Start Time": "00:18:49", "End Time": "00:20:05", "Zone Name": "Z#7", "Color": "#FF0033"},       
-                {"Start Time": "00:20:06", "End Time": "00:22:06", "Zone Name": "WatCool#1", "Color": "#00B4D8"},
-                {"Start Time": "00:22:07", "End Time": "00:23:35", "Zone Name": "WatCool#2", "Color": "#0096C7"},
-                {"Start Time": "00:23:36", "End Time": "00:25:05", "Zone Name": "Exit curtain box", "Color": "#0077B6"},
-                {"Start Time": "00:25:06", "End Time": "00:25:33", "Zone Name": "XFER#2", "Color": "#023E8A"},
-                {"Start Time": "00:25:34", "End Time": "00:26:33", "Zone Name": "AirCool#1", "Color": "#48CAE4"},
-                {"Start Time": "00:26:34", "End Time": "00:27:32", "Zone Name": "AirCool#2", "Color": "#90E0EF"},
-                {"Start Time": "00:27:33", "End Time": "00:28:59", "Zone Name": "Exit", "Color": "#CAF0F8"}
+                {"Start Time": "00:00:00", "End Time": "00:01:47", "Zone Name": "Dryer Z#1", "Color": "#F7DC6F"},
+                {"Start Time": "00:01:48", "End Time": "00:03:34", "Zone Name": "Dryer Z#2", "Color": "#F39C12"},
+                {"Start Time": "00:03:35", "End Time": "00:05:35", "Zone Name": "Xfer#1", "Color": "#E67E22"},
+                {"Start Time": "00:05:36", "End Time": "00:07:53", "Zone Name": "Z#1", "Color": "#FF0033"},       
+                {"Start Time": "00:07:54", "End Time": "00:09:37", "Zone Name": "Z#2", "Color": "#E6002E"},       
+                {"Start Time": "00:09:38", "End Time": "00:11:09", "Zone Name": "Z#3", "Color": "#CC0029"},       
+                {"Start Time": "00:11:10", "End Time": "00:12:30", "Zone Name": "Z#4", "Color": "#B30024"},       
+                {"Start Time": "00:12:31", "End Time": "00:13:59", "Zone Name": "Z#5", "Color": "#CC0029"},       
+                {"Start Time": "00:14:00", "End Time": "00:15:12", "Zone Name": "Z#6", "Color": "#E6002E"},       
+                {"Start Time": "00:15:13", "End Time": "00:16:36", "Zone Name": "Z#7", "Color": "#FF0033"},       
+                {"Start Time": "00:16:37", "End Time": "00:17:07", "Zone Name": "Xfer2", "Color": "#00B4D8"},
+                {"Start Time": "00:17:08", "End Time": "00:18:14", "Zone Name": "WatCol1", "Color": "#0096C7"},
+                {"Start Time": "00:18:15", "End Time": "00:19:26", "Zone Name": "WatCol2", "Color": "#00B4D8"},
+                {"Start Time": "00:19:27", "End Time": "00:20:54", "Zone Name": "Exit curtain box", "Color": "#0077B6"},
+                {"Start Time": "00:20:55", "End Time": "00:21:42", "Zone Name": "Airc1", "Color": "#48CAE4"},
+                {"Start Time": "00:21:43", "End Time": "00:22:30", "Zone Name": "Airc2", "Color": "#90E0EF"},
+                {"Start Time": "00:22:31", "End Time": "00:22:45", "Zone Name": "Exit", "Color": "#CAF0F8"}
             ]
             angle_setting = -90
         else:
             zones_data = [
-                {"Start Time": "00:00:00", "End Time": "00:05:00", "Zone Name": "Dryer", "Color": "#F39C12"},      
-                {"Start Time": "00:05:01", "End Time": "00:20:05", "Zone Name": "Brazing", "Color": "#FF0033"},    
-                {"Start Time": "00:20:06", "End Time": "00:27:32", "Zone Name": "Cool", "Color": "#00B4D8"},       
-                {"Start Time": "00:27:33", "End Time": "00:28:00", "Zone Name": "Exit", "Color": "#90E0EF"}
+                {"Start Time": "00:00:00", "End Time": "00:04:00", "Zone Name": "Dryer", "Color": "#F39C12"},      
+                {"Start Time": "00:05:01", "End Time": "00:17:07", "Zone Name": "Brazing", "Color": "#FF0033"},    
+                {"Start Time": "00:17:08", "End Time": "00:22:30", "Zone Name": "Cool", "Color": "#00B4D8"},       
+                {"Start Time": "00:22:31", "End Time": "00:25:00", "Zone Name": "Exit", "Color": "#90E0EF"}
             ]
             angle_setting = 0
 
-        # 📌 ตัดข้อมูลกราฟให้แสดงแค่วินาทีที่ 1739 (00:28:59) เพื่อให้ครอบคลุมโซนทั้งหมดพอดี
-        max_view_sec = 1739
+        # 📌 ตัดข้อมูลกราฟให้แสดงแค่ 00:00:00 ถึง 00:28:35 (1,715 วินาที) ตามข้อกำหนด
+        max_view_sec = 1715
         df_chart = df[df["ElapsedSeconds"] <= max_view_sec].copy()
         if df_chart.empty:
             df_chart = df.copy()
@@ -706,6 +704,7 @@ if uploaded_file:
             br_dwell_577 = (brazing_ht_subset[col_name] >= 577.0).sum() if not brazing_ht_subset.empty else 0
             
             d_dwell_300 = (dryer_subset[col_name] >= 300.0).sum() if not dryer_subset.empty else 0
+            d_dwell_250 = (dryer_subset[col_name] >= 250.0).sum() if not dryer_subset.empty else 0
 
             summary_rows.append([
                 location,
@@ -715,7 +714,8 @@ if uploaded_file:
                 format_seconds_to_time(br_dwell_600),
                 format_seconds_to_time(br_dwell_591),
                 format_seconds_to_time(br_dwell_577),
-                format_seconds_to_time(d_dwell_300)
+                format_seconds_to_time(d_dwell_300),
+                format_seconds_to_time(d_dwell_250)
             ])
 
         multi_cols = pd.MultiIndex.from_tuples([
@@ -726,7 +726,8 @@ if uploaded_file:
             ("Brazing Zone", "Dwell Time Above 600°C"),
             ("Brazing Zone", "Dwell Time Above 591°C"),
             ("Brazing Zone", "Dwell Time Above 577°C"),
-            ("Dryer Zone", "Dwell Time Above 300°C")
+            ("Dryer Zone", "Dwell Time Above 300°C"),
+            ("Dryer Zone", "Dwell Time Above 250°C")
         ])
 
         display_summary_df = pd.DataFrame(summary_rows, columns=multi_cols)
@@ -738,7 +739,7 @@ if uploaded_file:
             <div style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px 18px; font-size: 13px; color: #CCCCCC; margin-top: 10px;">
                 <b style="color: #F0B90B;">📌 เกณฑ์มาตรฐานอ้างอิง (Process Standards):</b><br>
                 • <b>Brazing Zone:</b> Max Temperature: <b>595 - 608 °C</b> | Dwell Time Above 600°C: <b>≤ 08:00 min (≤480s)</b> | Above 591°C: <b>02:00 - 12:00 min (120s - 720s)</b> | Above 577°C: <b>04:00 - 14:00 min (240s - 840s)</b><br>
-                • <b>Dryer Zone:</b> Max Temperature: <b>200 - 375 °C</b> | Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b>
+                • <b>Dryer Zone:</b> Max Temperature: <b>200 - 375 °C</b> | Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b> | Dwell Time Above 250°C: <b>> 2:00 min (>120s)</b>
             </div>
         """, unsafe_allow_html=True)
 
