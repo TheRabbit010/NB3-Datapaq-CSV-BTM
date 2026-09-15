@@ -191,17 +191,14 @@ st.title("🏭 Datapaq NB3 BTM")
 # 4. ฟังก์ชันแปลงวินาทีเป็นรูปแบบ mm:ss หรือ hh:mm:ss
 def format_seconds_to_time(total_seconds):
     if pd.isna(total_seconds) or total_seconds <= 0:
-        return "00:00"
+        return "00:00:00"
     
     total_sec = int(round(total_seconds + 1e-5))
     hours = total_sec // 3600
     minutes = (total_sec % 3600) // 60
     seconds = total_sec % 60
     
-    if hours == 0:
-        return f"{minutes:02d}:{seconds:02d}"
-    else:
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 def time_str_to_seconds(t_str):
     parts = t_str.split(":")
@@ -230,7 +227,6 @@ def get_probe_location(p_num, title_meta):
     # 2. เงื่อนไข N173
     elif "N173" in title_upper:
         if "TYPE2" in title_upper or "ALT" in title_upper or "V2" in title_upper:
-            # รูปแบบ N173 (ย่อย 2): PB#1,5 = L, PB#3,7 = ML, PB#4,6 = MR, PB#2,8 = R
             if p_num in [1, 5]:
                 return "L"
             elif p_num in [3, 7]:
@@ -240,7 +236,6 @@ def get_probe_location(p_num, title_meta):
             else:
                 return "R"
         else:
-            # รูปแบบ N173 (ย่อย 1): PB#1,7 = L, PB#3,5 = ML, PB#2,8 = MR, PB#4,6 = R
             if p_num in [1, 7]:
                 return "L"
             elif p_num in [3, 5]:
@@ -320,7 +315,6 @@ def parse_single_file(uploaded_file):
                 try:
                     time_str = parts[0].strip()
                     
-                    # ตัดแถวที่มีเวลาติดลบทิ้ง ป้องกันกราฟแบนราบ
                     if time_str.startswith("-"):
                         continue
                         
@@ -457,8 +451,10 @@ if uploaded_file:
             ]
             angle_setting = 0
 
-        # แสดงกราฟข้อมูลทั้งหมดในไฟล์ ไม่ตัดจบกราฟตามโซน
-        df_chart = df.copy()
+        # 📌 จำกัดขอบเขตการวาดกราฟให้อยู่ในช่วง 00:00:00 ถึง 00:28:30 (1,710 วินาที) ตามข้อกำหนด
+        df_chart = df[df["ElapsedSeconds"] <= 1710].copy()
+        if df_chart.empty:
+            df_chart = df.copy()
 
         # 📋 แสดงผล Header Metadata
         col_h1, col_h2 = st.columns(2)
@@ -658,20 +654,6 @@ if uploaded_file:
 
         title_meta = metadata.get("title", "")
 
-        # คำนวณค่า Dwell Time 300°C ของทุก Probe สำหรับนำไปหา Pitch (Max, Min, AVG)
-        dwell_300_seconds_list = []
-        for p_num, col_name in ordered_cols:
-            d_dwell_300 = (dryer_subset[col_name] >= 300.0).sum() if not dryer_subset.empty else 0
-            dwell_300_seconds_list.append(d_dwell_300)
-
-        pitch_max_sec = max(dwell_300_seconds_list) if dwell_300_seconds_list else 0
-        pitch_min_sec = min(dwell_300_seconds_list) if dwell_300_seconds_list else 0
-        pitch_avg_sec = np.mean(dwell_300_seconds_list) if dwell_300_seconds_list else 0
-
-        p_max_str = format_seconds_to_time(pitch_max_sec)
-        p_min_str = format_seconds_to_time(pitch_min_sec)
-        p_avg_str = format_seconds_to_time(pitch_avg_sec)
-
         summary_rows = []
         for idx, (p_num, col_name) in enumerate(ordered_cols):
             # ตรวจสอบตำแหน่ง Probe อัตโนมัติจาก #title
@@ -687,7 +669,8 @@ if uploaded_file:
             br_dwell_591 = (brazing_ht_subset[col_name] >= 591.0).sum() if not brazing_ht_subset.empty else 0
             br_dwell_577 = (brazing_ht_subset[col_name] >= 577.0).sum() if not brazing_ht_subset.empty else 0
             
-            d_dwell_300 = dwell_300_seconds_list[idx]
+            d_dwell_300 = (dryer_subset[col_name] >= 300.0).sum() if not dryer_subset.empty else 0
+            d_dwell_250 = (dryer_subset[col_name] >= 250.0).sum() if not dryer_subset.empty else 0
 
             summary_rows.append([
                 location,
@@ -697,9 +680,7 @@ if uploaded_file:
                 format_seconds_to_time(br_dwell_591),
                 format_seconds_to_time(br_dwell_577),
                 format_seconds_to_time(d_dwell_300),
-                p_max_str,
-                p_min_str,
-                p_avg_str
+                format_seconds_to_time(d_dwell_250)
             ])
 
         multi_cols = pd.MultiIndex.from_tuples([
@@ -710,9 +691,7 @@ if uploaded_file:
             ("Brazing Zone", "Dwell Time Above 591°C"),
             ("Brazing Zone", "Dwell Time Above 577°C"),
             ("Dryer Zone", "Dwell Time Above 300°C"),
-            ("Dryer Zone", "Max at 300°C / Pitch"),
-            ("Dryer Zone", "Min at 300°C / Pitch"),
-            ("Dryer Zone", "AVG at 300°C / Pitch")
+            ("Dryer Zone", "Dwell Time Above 250°C")
         ])
 
         display_summary_df = pd.DataFrame(summary_rows, columns=multi_cols)
@@ -724,7 +703,7 @@ if uploaded_file:
             <div style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px 18px; font-size: 13px; color: #CCCCCC; margin-top: 10px;">
                 <b style="color: #F0B90B;">📌 เกณฑ์มาตรฐานอ้างอิง (Process Standards):</b><br>
                 • <b>Brazing Zone:</b> Max Temperature: <b>595 - 608 °C</b> | Dwell Time Above 600°C: <b>≤ 08:00 min (≤480s)</b> | Above 591°C: <b>02:00 - 12:00 min (120s - 720s)</b> | Above 577°C: <b>04:00 - 14:00 min (240s - 840s)</b><br>
-                • <b>Dryer Zone:</b> Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b>
+                • <b>Dryer Zone:</b> Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b> | Dwell Time Above 250°C: <b>> 2:00 min (>120s)</b>
             </div>
         """, unsafe_allow_html=True)
 
