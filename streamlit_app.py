@@ -191,17 +191,14 @@ st.title("🏭 Datapaq NB3 BTM")
 # 4. ฟังก์ชันแปลงวินาทีเป็นรูปแบบ mm:ss หรือ hh:mm:ss
 def format_seconds_to_time(total_seconds):
     if pd.isna(total_seconds) or total_seconds <= 0:
-        return "00:00"
+        return "00:00:00"
     
     total_sec = int(round(total_seconds + 1e-5))
     hours = total_sec // 3600
     minutes = (total_sec % 3600) // 60
     seconds = total_sec % 60
     
-    if hours == 0:
-        return f"{minutes:02d}:{seconds:02d}"
-    else:
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 def time_str_to_seconds(t_str):
     parts = t_str.split(":")
@@ -230,7 +227,6 @@ def get_probe_location(p_num, title_meta):
     # 2. เงื่อนไข N173
     elif "N173" in title_upper:
         if "TYPE2" in title_upper or "ALT" in title_upper or "V2" in title_upper:
-            # รูปแบบ N173 (ย่อย 2): PB#1,5 = L, PB#3,7 = ML, PB#4,6 = MR, PB#2,8 = R
             if p_num in [1, 5]:
                 return "L"
             elif p_num in [3, 7]:
@@ -240,7 +236,6 @@ def get_probe_location(p_num, title_meta):
             else:
                 return "R"
         else:
-            # รูปแบบ N173 (ย่อย 1): PB#1,7 = L, PB#3,5 = ML, PB#2,8 = MR, PB#4,6 = R
             if p_num in [1, 7]:
                 return "L"
             elif p_num in [3, 5]:
@@ -320,7 +315,6 @@ def parse_single_file(uploaded_file):
                 try:
                     time_str = parts[0].strip()
                     
-                    # ตัดแถวที่มีเวลาติดลบทิ้ง ป้องกันกราฟแบนราบ
                     if time_str.startswith("-"):
                         continue
                         
@@ -419,6 +413,22 @@ if uploaded_file:
         st.sidebar.markdown("---")
         st.sidebar.header("🎛️ Dynamic Controls")
 
+        # 📌 Slider ปรับช่วงเวลามุมมองกราฟ (Default 00:00:00 ถึง 00:28:30 = 1,710 วินาที)
+        max_file_sec = int(df["ElapsedSeconds"].max()) if not df.empty else 1710
+        default_end_sec = min(1710, max_file_sec)
+
+        view_range_sec = st.sidebar.slider(
+            "⏱️ ปรับช่วงเวลามุมมองกราฟ (Start - End):",
+            min_value=0,
+            max_value=max_file_sec,
+            value=(0, default_end_sec),
+            step=10
+        )
+
+        start_view_str = format_seconds_to_time(view_range_sec[0])
+        end_view_str = format_seconds_to_time(view_range_sec[1])
+        st.sidebar.caption(f"📌 แสดงผลช่วงเวลา: **{start_view_str}** ถึง **{end_view_str}** (ดับเบิ้ลคลิกบนกราฟเพื่อรีเซ็ตซูมกลับค่าเดิม)")
+
         color_shading_mode = st.sidebar.radio(
             "เลือกโหมดแสดงสี:",
             ["แสดงสีตามโซน (By Zone)", "แสดงสีตามกลุ่มงาน (By Process Group)"],
@@ -457,7 +467,6 @@ if uploaded_file:
             ]
             angle_setting = 0
 
-        # แสดงกราฟข้อมูลทั้งหมดในไฟล์ ไม่ตัดจบกราฟตามโซน
         df_chart = df.copy()
 
         # 📋 แสดงผล Header Metadata
@@ -585,6 +594,7 @@ if uploaded_file:
             ),
             xaxis=dict(
                 title=dict(text="Time (hh:mm:ss)", font=dict(color="#FFFFFF", size=11)),
+                range=[start_view_str, end_view_str],
                 tickmode="array",
                 tickvals=df_chart.loc[tick_indices, "Time (HH:MM:SS)"].tolist(),
                 tickfont=dict(color="#CCCCCC", size=10),
