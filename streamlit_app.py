@@ -191,14 +191,17 @@ st.title("🏭 Datapaq NB3 BTM")
 # 4. ฟังก์ชันแปลงวินาทีเป็นรูปแบบ mm:ss หรือ hh:mm:ss
 def format_seconds_to_time(total_seconds):
     if pd.isna(total_seconds) or total_seconds <= 0:
-        return "00:00:00"
+        return "00:00"
     
     total_sec = int(round(total_seconds + 1e-5))
     hours = total_sec // 3600
     minutes = (total_sec % 3600) // 60
     seconds = total_sec % 60
     
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    if hours == 0:
+        return f"{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 def time_str_to_seconds(t_str):
     parts = t_str.split(":")
@@ -227,6 +230,7 @@ def get_probe_location(p_num, title_meta):
     # 2. เงื่อนไข N173
     elif "N173" in title_upper:
         if "TYPE2" in title_upper or "ALT" in title_upper or "V2" in title_upper:
+            # รูปแบบ N173 (ย่อย 2): PB#1,5 = L, PB#3,7 = ML, PB#4,6 = MR, PB#2,8 = R
             if p_num in [1, 5]:
                 return "L"
             elif p_num in [3, 7]:
@@ -236,6 +240,7 @@ def get_probe_location(p_num, title_meta):
             else:
                 return "R"
         else:
+            # รูปแบบ N173 (ย่อย 1): PB#1,7 = L, PB#3,5 = ML, PB#2,8 = MR, PB#4,6 = R
             if p_num in [1, 7]:
                 return "L"
             elif p_num in [3, 5]:
@@ -315,6 +320,7 @@ def parse_single_file(uploaded_file):
                 try:
                     time_str = parts[0].strip()
                     
+                    # ตัดแถวที่มีเวลาติดลบทิ้ง ป้องกันกราฟแบนราบ
                     if time_str.startswith("-"):
                         continue
                         
@@ -413,22 +419,6 @@ if uploaded_file:
         st.sidebar.markdown("---")
         st.sidebar.header("🎛️ Dynamic Controls")
 
-        # 📌 Slider ปรับช่วงเวลามุมมองกราฟ (Default 00:00:00 ถึง 00:28:30 = 1,710 วินาที)
-        max_file_sec = int(df["ElapsedSeconds"].max()) if not df.empty else 1710
-        default_end_sec = min(1710, max_file_sec)
-
-        view_range_sec = st.sidebar.slider(
-            "⏱️ ปรับช่วงเวลามุมมองกราฟ (Start - End):",
-            min_value=0,
-            max_value=max_file_sec,
-            value=(0, default_end_sec),
-            step=10
-        )
-
-        start_view_str = format_seconds_to_time(view_range_sec[0])
-        end_view_str = format_seconds_to_time(view_range_sec[1])
-        st.sidebar.caption(f"📌 แสดงผลช่วงเวลา: **{start_view_str}** ถึง **{end_view_str}** (ดับเบิ้ลคลิกบนกราฟเพื่อรีเซ็ตซูมกลับค่าเดิม)")
-
         color_shading_mode = st.sidebar.radio(
             "เลือกโหมดแสดงสี:",
             ["แสดงสีตามโซน (By Zone)", "แสดงสีตามกลุ่มงาน (By Process Group)"],
@@ -467,6 +457,7 @@ if uploaded_file:
             ]
             angle_setting = 0
 
+        # แสดงกราฟข้อมูลทั้งหมดในไฟล์ ไม่ตัดจบกราฟตามโซน
         df_chart = df.copy()
 
         # 📋 แสดงผล Header Metadata
@@ -594,7 +585,6 @@ if uploaded_file:
             ),
             xaxis=dict(
                 title=dict(text="Time (hh:mm:ss)", font=dict(color="#FFFFFF", size=11)),
-                range=[start_view_str, end_view_str],
                 tickmode="array",
                 tickvals=df_chart.loc[tick_indices, "Time (HH:MM:SS)"].tolist(),
                 tickfont=dict(color="#CCCCCC", size=10),
@@ -698,7 +688,6 @@ if uploaded_file:
             br_dwell_577 = (brazing_ht_subset[col_name] >= 577.0).sum() if not brazing_ht_subset.empty else 0
             
             d_dwell_300 = dwell_300_seconds_list[idx]
-            d_dwell_250 = (dryer_subset[col_name] >= 250.0).sum() if not dryer_subset.empty else 0
 
             summary_rows.append([
                 location,
@@ -708,7 +697,6 @@ if uploaded_file:
                 format_seconds_to_time(br_dwell_591),
                 format_seconds_to_time(br_dwell_577),
                 format_seconds_to_time(d_dwell_300),
-                format_seconds_to_time(d_dwell_250),
                 p_max_str,
                 p_min_str,
                 p_avg_str
@@ -722,7 +710,6 @@ if uploaded_file:
             ("Brazing Zone", "Dwell Time Above 591°C"),
             ("Brazing Zone", "Dwell Time Above 577°C"),
             ("Dryer Zone", "Dwell Time Above 300°C"),
-            ("Dryer Zone", "Dwell Time Above 250°C"),
             ("Dryer Zone", "Max at 300°C / Pitch"),
             ("Dryer Zone", "Min at 300°C / Pitch"),
             ("Dryer Zone", "AVG at 300°C / Pitch")
@@ -737,7 +724,7 @@ if uploaded_file:
             <div style="background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 12px 18px; font-size: 13px; color: #CCCCCC; margin-top: 10px;">
                 <b style="color: #F0B90B;">📌 เกณฑ์มาตรฐานอ้างอิง (Process Standards):</b><br>
                 • <b>Brazing Zone:</b> Max Temperature: <b>595 - 608 °C</b> | Dwell Time Above 600°C: <b>≤ 08:00 min (≤480s)</b> | Above 591°C: <b>02:00 - 12:00 min (120s - 720s)</b> | Above 577°C: <b>04:00 - 14:00 min (240s - 840s)</b><br>
-                • <b>Dryer Zone:</b> Dwell Time Above 300°C: <b>≥ 2:00 min (≥120s)</b> | Dwell Time Above 250°C: <b>≥ 2:00 min (≥120s)</b>
+                • <b>Dryer Zone:</b> Dwell Time Above 300°C: <b>> 2:00 min (>120s)</b>
             </div>
         """, unsafe_allow_html=True)
 
