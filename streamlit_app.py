@@ -268,7 +268,7 @@ def get_probe_location(p_num, title_meta):
         elif p_num in [5, 6]: return "MR"
         else: return "R"
 
-# 5. ฟังก์ชันอ่านไฟล์ CSV แบบตัดเวลาติดลบและ Auto-Trim ปรับเวลาเข้าเตา
+# 5. ฟังก์ชันอ่านไฟล์ CSV แบบรองรับสถานะ *OC* (Open Circuit) และ Auto-Trim
 def parse_single_file(uploaded_file):
     uploaded_file.seek(0)
     raw_bytes = uploaded_file.read()
@@ -329,7 +329,7 @@ def parse_single_file(uploaded_file):
                     probe_labels[ch_num] = val
         else:
             parts = [p.strip() for p in line_str.split(",") if p.strip() != ""]
-            if len(parts) >= 10:
+            if len(parts) >= 3:
                 try:
                     time_str = parts[0].strip()
                     
@@ -342,8 +342,22 @@ def parse_single_file(uploaded_file):
                     else:
                         elapsed_sec = len(data_rows)
                     
-                    dist_val = float(parts[1])
-                    probe_vals = [float(p) for p in parts[2:10]]
+                    try:
+                        dist_val = float(parts[1])
+                    except ValueError:
+                        dist_val = 0.0
+                        
+                    # แปลงค่าโพรบที่ไม่ใช่ตัวเลข (เช่น *OC*) เป็น np.nan
+                    probe_vals = []
+                    for p in parts[2:10]:
+                        try:
+                            probe_vals.append(float(p))
+                        except ValueError:
+                            probe_vals.append(np.nan)
+                    
+                    # เติม np.nan ให้ครบ 8 Probe หากแชนแนลเปิดไม่ครบ
+                    while len(probe_vals) < 8:
+                        probe_vals.append(np.nan)
                     
                     data_rows.append({
                         "elapsed_sec": elapsed_sec,
@@ -351,7 +365,7 @@ def parse_single_file(uploaded_file):
                         "dist_val": dist_val,
                         "probes": probe_vals
                     })
-                except (ValueError, IndexError):
+                except Exception:
                     continue
 
     if not data_rows:
@@ -700,7 +714,7 @@ if uploaded_file:
         ordered_cols = []
         for p_num in probe_order:
             for c in probe_cols[:8]:
-                if f"Probe #{p_num}" in c:
+                if f"Probe #{p_num}" in c or f"Probe #{p_num}:" in c:
                     ordered_cols.append((p_num, c))
                     break
 
@@ -713,9 +727,12 @@ if uploaded_file:
 
             short_pb_name = f"PB#{p_num}"
             
-            # Max Temp
-            br_max = f"{brazing_max_subset[col_name].max():.1f}" if not brazing_max_subset.empty else "0.0"
-            d_max = f"{dryer_subset[col_name].max():.1f}" if not dryer_subset.empty else "0.0"
+            # Max Temp (รองรับกรณีสายหลุดเป็น NaN)
+            br_val = brazing_max_subset[col_name].max() if not brazing_max_subset.empty else np.nan
+            br_max = f"{br_val:.1f}" if pd.notna(br_val) else "-"
+            
+            d_val = dryer_subset[col_name].max() if not dryer_subset.empty else np.nan
+            d_max = f"{d_val:.1f}" if pd.notna(d_val) else "-"
             
             # Dwell Time
             br_dwell_600 = (brazing_ht_subset[col_name] >= 600.0).sum() if not brazing_ht_subset.empty else 0
